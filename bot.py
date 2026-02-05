@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseMiddleware(BaseMiddleware):
-    """Middleware to inject database into handlers"""
-    def __init__(self, db: Database):
+    """Middleware to inject database and bot into handlers"""
+    def __init__(self, db: Database, bot: Bot):
         self.db = db
+        self.bot = bot
     
     async def __call__(
         self,
@@ -33,6 +34,7 @@ class DatabaseMiddleware(BaseMiddleware):
         data: dict[str, Any]
     ) -> Any:
         data["db"] = self.db
+        data["bot"] = self.bot
         return await handler(event, data)
 
 
@@ -54,8 +56,9 @@ async def main():
     db = Database()
     await db.connect()
     
-    # Register middleware to inject database
-    dp.message.middleware(DatabaseMiddleware(db))
+    # Register middleware to inject database and bot
+    dp.message.middleware(DatabaseMiddleware(db, bot))
+    dp.callback_query.middleware(DatabaseMiddleware(db, bot))
     
     # Register router
     dp.include_router(router)
