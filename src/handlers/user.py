@@ -38,11 +38,18 @@ async def start(message: Message):
         return
     await ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
     keyboard = get_main_keyboard(message.from_user.id)
+    first_name = message.from_user.first_name or "אורח/ת"
     await message.answer(
-        "🎟 <b>ברוכים הבאים ל-TickAlert!</b>\n\n"
-        "לא תפספסו כרטיס יותר.\n"
-        "קבלו התראה מיידית כשכרטיס מתפנה לאירוע שלכם.\n\n"
-        "👇 השתמשו בכפתורים למטה לניווט.",
+        f"🎟 <b>היי {first_name}, ברוכים הבאים ל-TickAlert!</b>\n\n"
+        "הבוט עוזר לכם <b>למצוא ולמכור כרטיסים</b> למשחקי ביתר ירושלים.\n"
+        "הירשמו לאירוע — וקבלו התראה מיידית כשכרטיס מתפנה!\n\n"
+        "⚽ <b>מה אפשר לעשות כאן?</b>\n"
+        "🎫 <b>אירועים זמינים</b> — צפו במשחקים הקרובים והירשמו להתראות\n"
+        "📋 <b>האירועים שלי</b> — המשחקים שנרשמתם אליהם\n"
+        "💰 <b>פרסום כרטיס למכירה</b> — יש כרטיס מיותר? פרסמו אותו כאן\n\n"
+        "💡 <b>טיפ:</b> ברגע שמישהו מפרסם כרטיס לאירוע שנרשמתם אליו — "
+        "תקבלו הודעה ישירות לכאן עם כל הפרטים!\n\n"
+        "👇 השתמשו בכפתורים למטה להתחיל.",
         reply_markup=keyboard,
     )
 
