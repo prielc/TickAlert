@@ -1,0 +1,8 @@
+aiogram==3.25.0
+fastapi==0.129.0
+uvicorn==0.40.0
+sqlalchemy[asyncio]==2.0.46
+asyncpg==0.31.0
+alembic==1.13.1
+python-dotenv==1.0.1
+httpx==0.28.1

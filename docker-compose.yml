@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tickalert
+      POSTGRES_PASSWORD: tickalert
+      POSTGRES_DB: tickalert
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://tickalert:tickalert@db:5432/tickalert
+
+volumes:
+  pgdata:
