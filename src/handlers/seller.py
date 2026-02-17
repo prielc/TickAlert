@@ -1,4 +1,5 @@
 import logging
+import re
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
@@ -83,8 +84,22 @@ async def sell_price(message: Message, state: FSMContext):
     await state.set_state(SellFlow.enter_phone)
 
 
+def _is_valid_phone(phone: str) -> bool:
+    """Validate Israeli phone number: 05X-XXXXXXX (10 digits, with optional dashes/spaces)."""
+    digits = re.sub(r"[\s\-]", "", phone)
+    return bool(re.fullmatch(r"05\d{8}", digits))
+
+
 @router.message(SellFlow.enter_phone)
 async def sell_phone(message: Message, state: FSMContext, bot: Bot):
+    if not _is_valid_phone(message.text):
+        await message.answer(
+            "❌ מספר טלפון לא תקין.\n"
+            "יש להזין מספר ישראלי בפורמט: <b>05X-XXXXXXX</b>\n"
+            "לדוגמה: 050-1234567"
+        )
+        return
+
     data = await state.get_data()
     phone = message.text
     event_id = data["event_id"]
