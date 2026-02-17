@@ -1,4 +1,5 @@
 import logging
+from datetime import date, datetime
 
 from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,23 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from src.db.models import User, BlockedUser, Event, Registration, Ticket
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_event_date(date_str: str) -> date | None:
+    """Parse event date string into a date object. Handles YYYY-MM-DD and D.M.YY formats."""
+    for fmt in ("%Y-%m-%d", "%d.%m.%y"):
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _is_future_event(event: "Event") -> bool:
+    parsed = _parse_event_date(event.date)
+    if parsed is None:
+        return True  # keep events with unparseable dates visible
+    return parsed >= date.today()
 
 
 # --- Users ---
@@ -61,7 +79,8 @@ async def get_active_events(session: AsyncSession) -> list[Event]:
     result = await session.execute(
         select(Event).where(Event.active == True).order_by(Event.date)
     )
-    return list(result.scalars().all())
+    events = list(result.scalars().all())
+    return [e for e in events if _is_future_event(e)]
 
 
 async def get_event(session: AsyncSession, event_id: int) -> Event | None:
@@ -126,7 +145,8 @@ async def get_user_registrations(session: AsyncSession, telegram_id: int) -> lis
         .where(Registration.telegram_id == telegram_id, Event.active == True)
         .order_by(Event.date)
     )
-    return list(result.scalars().all())
+    events = list(result.scalars().all())
+    return [e for e in events if _is_future_event(e)]
 
 
 async def get_registered_users(session: AsyncSession, event_id: int) -> list[int]:
