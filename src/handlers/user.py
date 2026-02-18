@@ -12,7 +12,8 @@ router = Router()
 def get_main_keyboard(user_id: int) -> ReplyKeyboardMarkup:
     keyboard = [
         [KeyboardButton(text="🎫 אירועים זמינים"), KeyboardButton(text="📋 האירועים שלי")],
-        [KeyboardButton(text="💰 פרסום כרטיס למכירה"), KeyboardButton(text="❓ עזרה")],
+        [KeyboardButton(text="💰 פרסום כרטיס"), KeyboardButton(text="🎟 הכרטיסים שלי")],
+        [KeyboardButton(text="❓ עזרה")],
     ]
     if user_id in ADMIN_IDS:
         keyboard.append([KeyboardButton(text="❌ ביטול"), KeyboardButton(text="🔧 תפריט מנהל")])
@@ -48,8 +49,8 @@ async def start(message: Message):
         "🎫 <b>אירועים זמינים</b> — צפו במשחקים הקרובים והירשמו להתראות\n"
         "📋 <b>האירועים שלי</b> — המשחקים שנרשמתם אליהם\n"
         "💰 <b>פרסום כרטיס</b> — יש כרטיס מיותר? פרסמו אותו כאן\n"
-        "🔎 <b>צפייה בכרטיסים</b> — אירועים זמינים → בחרו אירוע → צפייה בכרטיסים זמינים\n"
-        "🗑 <b>מכרתם כרטיס?</b> — לחצו על כפתור מחיקת כרטיס שמופיע אחרי הפרסום\n\n"
+        "🎟 <b>הכרטיסים שלי</b> — צפייה ומחיקה של כרטיסים שפרסמתם\n"
+        "🔎 <b>צפייה בכרטיסים</b> — אירועים זמינים → בחרו אירוע → צפייה בכרטיסים זמינים\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "💡 <b>איך זה עובד?</b>\n\n"
         "1. בחרו אירוע מתוך <b>אירועים זמינים</b>\n"
@@ -81,8 +82,8 @@ async def help_command(message: Message):
         "🎫 <b>אירועים זמינים</b> — צפו במשחקים הקרובים והירשמו להתראות\n"
         "📋 <b>האירועים שלי</b> — המשחקים שנרשמתם אליהם\n"
         "💰 <b>פרסום כרטיס</b> — יש כרטיס מיותר? פרסמו אותו כאן\n"
+        "🎟 <b>הכרטיסים שלי</b> — צפייה ומחיקה של כרטיסים שפרסמתם\n"
         "🔎 <b>צפייה בכרטיסים</b> — אירועים זמינים → בחרו אירוע → צפייה בכרטיסים זמינים\n"
-        "🗑 <b>מכרתם כרטיס?</b> — לחצו על כפתור מחיקת כרטיס שמופיע אחרי הפרסום\n"
         "❌ <b>ביטול</b> — ביטול פעולה נוכחית\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "💡 <b>איך זה עובד?</b>\n\n"
@@ -185,12 +186,14 @@ async def register_event(callback: CallbackQuery):
         event = await repo.get_event(session, event_id)
 
     if registered:
+        kb = [[InlineKeyboardButton(text="🎫 צפייה בכרטיסים זמינים", callback_data=f"viewtickets_{event_id}")]]
         await callback.message.edit_text(
             f"✅ נרשמת בהצלחה להתראות!\n\n"
             f"📅 אירוע: <b>{event.name}</b>\n"
             f"🗓 תאריך: {event.date}\n"
             f"🕐 שעה: {event.time or 'לא צוין'}\n"
             f"📍 מיקום: {event.location or 'לא צוין'}",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=kb),
         )
     else:
         await callback.message.edit_text("כבר נרשמת לאירוע זה.")
@@ -205,10 +208,16 @@ async def unregister_event(callback: CallbackQuery):
         unregistered = await repo.unregister_from_event(session, callback.from_user.id, event_id)
         event = await repo.get_event(session, event_id)
 
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 חזרה לאירועים", callback_data="back_events")]
+    ])
     if unregistered:
-        await callback.message.edit_text(f"❌ הרשמתך לאירוע <b>{event.name}</b> בוטלה.")
+        await callback.message.edit_text(
+            f"❌ הרשמתך לאירוע <b>{event.name}</b> בוטלה.",
+            reply_markup=back_kb,
+        )
     else:
-        await callback.message.edit_text("לא היית רשום לאירוע זה.")
+        await callback.message.edit_text("לא היית רשום לאירוע זה.", reply_markup=back_kb)
     await callback.answer()
 
 
@@ -249,9 +258,14 @@ async def view_tickets(callback: CallbackQuery):
             return
         tickets = await repo.get_active_tickets(session, event_id)
 
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 חזרה לאירוע", callback_data=f"event_{event_id}")]
+    ])
+
     if not tickets:
         await callback.message.edit_text(
             f"📅 <b>{event.name}</b>\n\nאין כרטיסים זמינים כרגע לאירוע זה.",
+            reply_markup=back_kb,
         )
         await callback.answer()
         return
@@ -266,5 +280,27 @@ async def view_tickets(callback: CallbackQuery):
         )
     lines.append("━━━━━━━━━━━━━━━")
 
-    await callback.message.edit_text("\n".join(lines))
+    await callback.message.edit_text("\n".join(lines), reply_markup=back_kb)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "back_events")
+async def back_to_events(callback: CallbackQuery):
+    async with async_session() as session:
+        active_events = await repo.get_active_events(session)
+
+    if not active_events:
+        await callback.message.edit_text("אין אירועים זמינים כרגע.")
+        await callback.answer()
+        return
+
+    active_events = active_events[:5]
+    keyboard = []
+    for event in active_events:
+        keyboard.append([InlineKeyboardButton(text=_event_label(event), callback_data=f"event_{event.id}")])
+
+    await callback.message.edit_text(
+        "🎫 <b>אירועים זמינים:</b>\nלחצו על אירוע כדי להירשם לקבלת התראות.",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard),
+    )
     await callback.answer()

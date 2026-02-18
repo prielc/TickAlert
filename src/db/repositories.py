@@ -193,6 +193,26 @@ async def get_active_tickets(session: AsyncSession, event_id: int) -> list[dict]
     ]
 
 
+async def get_seller_tickets(session: AsyncSession, seller_telegram_id: int) -> list[dict]:
+    """Return all active (non-deleted) tickets for a seller, with event info."""
+    result = await session.execute(
+        select(Ticket, Event.name.label("event_name"))
+        .join(Event, Ticket.event_id == Event.id)
+        .where(Ticket.seller_telegram_id == seller_telegram_id, Ticket.deleted_at.is_(None))
+        .order_by(Ticket.posted_at.desc())
+    )
+    rows = result.all()
+    return [
+        {
+            "id": t.id,
+            "event_name": event_name,
+            "description": t.description,
+            "posted_at": t.posted_at,
+        }
+        for t, event_name in rows
+    ]
+
+
 async def delete_ticket(session: AsyncSession, ticket_id: int):
     ticket = await get_ticket(session, ticket_id)
     if ticket:

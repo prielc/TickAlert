@@ -23,6 +23,7 @@ class SellFlow(StatesGroup):
 
 
 @router.message(Command("sell"))
+@router.message(F.text == "💰 פרסום כרטיס")
 @router.message(F.text == "💰 פרסום כרטיס למכירה")
 async def sell_start(message: Message, state: FSMContext):
     if await is_blocked(message.from_user.id):
@@ -200,3 +201,35 @@ async def delete_ticket(callback: CallbackQuery, bot: Bot):
             await bot.send_message(user_id, notice_text)
         except Exception as e:
             logger.warning(f"Failed to send delete notice to {user_id}: {e}")
+
+
+@router.message(Command("mytickets"))
+@router.message(F.text == "🎟 הכרטיסים שלי")
+async def my_tickets(message: Message):
+    if await is_blocked(message.from_user.id):
+        await message.answer("⛔ אתה חסום ואינך יכול להשתמש בבוט זה.")
+        return
+    await ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+
+    async with async_session() as session:
+        tickets = await repo.get_seller_tickets(session, message.from_user.id)
+
+    if not tickets:
+        await message.answer("אין לך כרטיסים מפורסמים כרגע.")
+        return
+
+    lines = ["🎟 <b>הכרטיסים שלי:</b>\n"]
+    keyboard = []
+    for t in tickets:
+        lines.append(
+            f"━━━━━━━━━━━━━━━\n"
+            f"📅 {t['event_name']}\n"
+            f"{t['description']}"
+        )
+        keyboard.append([InlineKeyboardButton(text=f"🗑 מחק — {t['event_name'][:30]}", callback_data=f"delticket_{t['id']}")])
+    lines.append("━━━━━━━━━━━━━━━")
+
+    await message.answer(
+        "\n".join(lines),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard),
+    )
