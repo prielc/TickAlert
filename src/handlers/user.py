@@ -102,7 +102,6 @@ def _event_label(event) -> str:
 
 @router.message(Command("events"))
 @router.message(F.text == "🔎 מחפש כרטיס")
-@router.message(F.text == "🎫 אירועים זמינים")
 async def events(message: Message):
     if await is_blocked(message.from_user.id):
         await message.answer("⛔ אתה חסום ואינך יכול להשתמש בבוט זה.")
