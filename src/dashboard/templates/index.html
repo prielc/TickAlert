@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="metric-grid">
+    <div class="metric-card">
+        <h2>{{ stats.total_users }}</h2>
+        <p>Total Users</p>
+    </div>
+    <div class="metric-card">
+        <h2>{{ stats.active_events }}</h2>
+        <p>Active Events</p>
+    </div>
+    <div class="metric-card">
+        <h2>{{ stats.total_registrations }}</h2>
+        <p>Registrations</p>
+    </div>
+    <div class="metric-card">
+        <h2>{{ stats.total_tickets }}</h2>
+        <p>Tickets</p>
+    </div>
+    <div class="metric-card">
+        <h2>{{ stats.blocked_users }}</h2>
+        <p>Blocked Users</p>
+    </div>
+</div>
+
+<h2>Top Events by Registrations</h2>
+{% if top_events %}
+<table>
+    <thead>
+        <tr>
+            <th>Event</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Registrations</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in top_events %}
+        <tr>
+            <td>{{ e.name }}</td>
+            <td>{{ e.date }}</td>
+            <td>
+                {% if e.active %}
+                <span class="badge badge-active">Active</span>
+                {% else %}
+                <span class="badge badge-inactive">Inactive</span>
+                {% endif %}
+            </td>
+            <td>{{ e.reg_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No events yet.</p>
+{% endif %}
+{% endblock %}

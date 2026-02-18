@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TickAlert Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root {
+            --pico-font-size: 16px;
+        }
+        body { min-height: 100vh; display: flex; flex-direction: column; }
+        nav { background: var(--pico-primary-background); padding: 0.5rem 1rem; }
+        nav ul { margin: 0; }
+        nav a { color: white !important; text-decoration: none; }
+        nav a:hover { opacity: 0.8; }
+        .nav-active { font-weight: bold; text-decoration: underline !important; }
+        main { flex: 1; padding: 1rem 0; }
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .metric-card { text-align: center; padding: 1.5rem; border-radius: 8px; background: var(--pico-card-background-color); border: 1px solid var(--pico-muted-border-color); }
+        .metric-card h2 { font-size: 2rem; margin: 0; color: var(--pico-primary); }
+        .metric-card p { margin: 0.5rem 0 0; color: var(--pico-muted-color); }
+        table { font-size: 0.9rem; }
+        .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-inactive { background: #f8d7da; color: #721c24; }
+        footer { text-align: center; padding: 1rem; color: var(--pico-muted-color); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/dashboard"><strong>TickAlert</strong></a></li>
+        </ul>
+        <ul>
+            <li><a href="/dashboard" class="{% if page == 'index' %}nav-active{% endif %}">Dashboard</a></li>
+            <li><a href="/dashboard/users" class="{% if page == 'users' %}nav-active{% endif %}">Users</a></li>
+            <li><a href="/dashboard/events" class="{% if page == 'events' %}nav-active{% endif %}">Events</a></li>
+            <li><a href="/dashboard/tickets" class="{% if page == 'tickets' %}nav-active{% endif %}">Tickets</a></li>
+            <li><a href="/dashboard/blocked" class="{% if page == 'blocked' %}nav-active{% endif %}">Blocked</a></li>
+            <li><a href="/dashboard/logout">Logout</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    <footer>TickAlert Admin Dashboard</footer>
+</body>
+</html>

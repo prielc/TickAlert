@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TickAlert Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-box { max-width: 400px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <article>
+            <header>
+                <h2>TickAlert Dashboard</h2>
+                <p>Enter admin password to continue</p>
+            </header>
+            {% if error %}
+            <p style="color: var(--pico-del-color);">{{ error }}</p>
+            {% endif %}
+            <form method="post" action="/dashboard/login">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Admin password" required autofocus>
+                <button type="submit">Login</button>
+            </form>
+        </article>
+    </div>
+</body>
+</html>

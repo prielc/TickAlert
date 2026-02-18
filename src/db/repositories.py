@@ -177,7 +177,7 @@ async def get_active_tickets(session: AsyncSession, event_id: int) -> list[dict]
     result = await session.execute(
         select(Ticket, User.username, User.first_name)
         .join(User, Ticket.seller_telegram_id == User.telegram_id)
-        .where(Ticket.event_id == event_id)
+        .where(Ticket.event_id == event_id, Ticket.deleted_at.is_(None))
         .order_by(Ticket.posted_at.desc())
     )
     rows = result.all()
@@ -194,7 +194,7 @@ async def get_active_tickets(session: AsyncSession, event_id: int) -> list[dict]
 
 
 async def delete_ticket(session: AsyncSession, ticket_id: int):
-    await session.execute(
-        sa_delete(Ticket).where(Ticket.id == ticket_id)
-    )
-    await session.commit()
+    ticket = await get_ticket(session, ticket_id)
+    if ticket:
+        ticket.deleted_at = datetime.utcnow()
+        await session.commit()

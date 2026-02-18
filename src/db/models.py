@@ -55,3 +55,4 @@ class Ticket(Base):
     seller_telegram_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.telegram_id"))
     description: Mapped[str | None] = mapped_column(Text)
     posted_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(default=None)

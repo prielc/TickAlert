@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# ===== USERS PAGE ===== #}
+{% if section == "users" %}
+<h1>Users</h1>
+
+<h3>User Growth (by day)</h3>
+{% if growth %}
+<table>
+    <thead><tr><th>Date</th><th>New Users</th></tr></thead>
+    <tbody>
+        {% for g in growth %}
+        <tr><td>{{ g.day }}</td><td>{{ g.count }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No growth data yet.</p>
+{% endif %}
+
+<h3>All Users ({{ users|length }})</h3>
+<div style="overflow-x: auto;">
+<table>
+    <thead>
+        <tr>
+            <th>Telegram ID</th>
+            <th>Username</th>
+            <th>First Name</th>
+            <th>Joined</th>
+            <th>Registrations</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.telegram_id }}</td>
+            <td>{{ u.username or "—" }}</td>
+            <td>{{ u.first_name or "—" }}</td>
+            <td>{{ u.joined_at.strftime("%Y-%m-%d %H:%M") if u.joined_at else "—" }}</td>
+            <td>{{ u.reg_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{# ===== EVENTS PAGE ===== #}
+{% elif section == "events" %}
+<h1>Events</h1>
+
+<div style="overflow-x: auto;">
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Registrations</th>
+            <th>Tickets</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in events %}
+        <tr>
+            <td>{{ e.name }}</td>
+            <td>{{ e.date }}</td>
+            <td>{{ e.time or "—" }}</td>
+            <td>{{ e.location or "—" }}</td>
+            <td>
+                {% if e.active %}
+                <span class="badge badge-active">Active</span>
+                {% else %}
+                <span class="badge badge-inactive">Inactive</span>
+                {% endif %}
+            </td>
+            <td>{{ e.reg_count }}</td>
+            <td>{{ e.ticket_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{# ===== TICKETS PAGE ===== #}
+{% elif section == "tickets" %}
+<h1>Tickets</h1>
+
+{% if top_sellers %}
+<h3>Top Sellers</h3>
+<table>
+    <thead>
+        <tr><th>Seller</th><th>Username</th><th>Tickets Posted</th></tr>
+    </thead>
+    <tbody>
+        {% for s in top_sellers %}
+        <tr>
+            <td>{{ s.first_name or s.telegram_id }}</td>
+            <td>{{ ("@" + s.username) if s.username else "—" }}</td>
+            <td>{{ s.ticket_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<h3>All Tickets ({{ tickets|length }})</h3>
+<div style="overflow-x: auto;">
+<table>
+    <thead>
+        <tr>
+            <th>Event</th>
+            <th>Seller</th>
+            <th>Description</th>
+            <th>Posted</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in tickets %}
+        <tr>
+            <td>{{ t.event_name }}</td>
+            <td>{{ t.seller_first_name or t.seller_telegram_id }}{% if t.seller_username %} (@{{ t.seller_username }}){% endif %}</td>
+            <td>{{ t.description or "—" }}</td>
+            <td>{{ t.posted_at.strftime("%Y-%m-%d %H:%M") if t.posted_at else "—" }}</td>
+            <td>
+                {% if t.deleted_at %}
+                <span class="badge badge-inactive">Sold {{ t.deleted_at.strftime("%Y-%m-%d") }}</span>
+                {% else %}
+                <span class="badge badge-active">Active</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{# ===== BLOCKED USERS PAGE ===== #}
+{% elif section == "blocked" %}
+<h1>Blocked Users</h1>
+
+<details>
+    <summary>Block a user</summary>
+    <form method="post" action="/dashboard/block" style="margin-top: 1rem;">
+        <div class="grid">
+            <div>
+                <label for="telegram_id">Telegram ID</label>
+                <input type="number" id="telegram_id" name="telegram_id" placeholder="e.g. 123456789" required>
+            </div>
+            <div>
+                <label for="reason">Reason (optional)</label>
+                <input type="text" id="reason" name="reason" placeholder="Reason for blocking">
+            </div>
+        </div>
+        <button type="submit" class="secondary">Block User</button>
+    </form>
+</details>
+
+{% if blocked %}
+<table>
+    <thead>
+        <tr>
+            <th>Telegram ID</th>
+            <th>Blocked At</th>
+            <th>Reason</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for b in blocked %}
+        <tr>
+            <td>{{ b.telegram_id }}</td>
+            <td>{{ b.blocked_at.strftime("%Y-%m-%d %H:%M") if b.blocked_at else "—" }}</td>
+            <td>{{ b.reason or "—" }}</td>
+            <td>
+                <form method="post" action="/dashboard/unblock" style="margin: 0;">
+                    <input type="hidden" name="telegram_id" value="{{ b.telegram_id }}">
+                    <button type="submit" class="outline secondary" style="padding: 0.3rem 0.8rem; font-size: 0.85rem;">Unblock</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No blocked users.</p>
+{% endif %}
+
+{% endif %}
+{% endblock %}
