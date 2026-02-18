@@ -1,18 +1,24 @@
 import logging
 import asyncio
+import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from fastapi import FastAPI, Request, Response
 
 from src.config import BOT_TOKEN, WEBHOOK_BASE_URL, WEBHOOK_SECRET
 from src.handlers import user, seller, admin
 from src.scraper import fetch_future_beitar_games
 from src.db.repositories import sync_scraped_events
 from src.db.session import async_session
+from src.dashboard.routes import router as dashboard_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+app = FastAPI()
+app.include_router(dashboard_router)
 
 
 def create_dispatcher() -> Dispatcher:
@@ -60,43 +66,54 @@ async def on_startup(bot: Bot):
         logger.info("Running in polling mode")
 
 
-async def main():
-    bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = create_dispatcher()
+bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+dp = create_dispatcher()
 
+
+@app.post("/webhook")
+async def webhook_handler(request: Request) -> Response:
+    if WEBHOOK_SECRET:
+        secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+        if secret != WEBHOOK_SECRET:
+            return Response(status_code=403)
+
+    from aiogram.types import Update
+    update = Update.model_validate(await request.json(), context={"bot": bot})
+    await dp.feed_update(bot, update)
+    return Response(status_code=200)
+
+
+async def main():
     dp.startup.register(on_startup)
 
     if WEBHOOK_BASE_URL:
-        # Webhook mode with FastAPI
-        from fastapi import FastAPI, Request, Response
+        # Webhook mode: just run FastAPI (serves both webhook + dashboard)
         import uvicorn
-
-        app = FastAPI()
-
-        @app.post("/webhook")
-        async def webhook_handler(request: Request) -> Response:
-            # Verify secret
-            if WEBHOOK_SECRET:
-                secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
-                if secret != WEBHOOK_SECRET:
-                    return Response(status_code=403)
-
-            from aiogram.types import Update
-            update = Update.model_validate(await request.json(), context={"bot": bot})
-            await dp.feed_update(bot, update)
-            return Response(status_code=200)
 
         @app.on_event("startup")
         async def fastapi_startup():
             await on_startup(bot)
 
-        config = uvicorn.Config(app, host="0.0.0.0", port=8000)
+        port = int(os.getenv("PORT", 8000))
+        config = uvicorn.Config(app, host="0.0.0.0", port=port)
         server = uvicorn.Server(config)
         await server.serve()
     else:
-        # Polling mode (local development)
-        logger.info("Starting bot in polling mode...")
-        await dp.start_polling(bot)
+        # Polling mode: run FastAPI + aiogram polling concurrently
+        import uvicorn
+
+        async def run_fastapi():
+            port = int(os.getenv("PORT", 8000))
+            config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
+            server = uvicorn.Server(config)
+            await server.serve()
+
+        async def run_polling():
+            await on_startup(bot)
+            logger.info("Starting bot in polling mode...")
+            await dp.start_polling(bot)
+
+        await asyncio.gather(run_fastapi(), run_polling())
 
 
 if __name__ == "__main__":
