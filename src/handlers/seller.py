@@ -23,6 +23,7 @@ class SellFlow(StatesGroup):
 
 
 @router.message(Command("sell"))
+@router.message(F.text == "💰 מוכר כרטיס")
 @router.message(F.text == "💰 פרסום כרטיס")
 @router.message(F.text == "💰 פרסום כרטיס למכירה")
 async def sell_start(message: Message, state: FSMContext):
@@ -204,6 +205,7 @@ async def delete_ticket(callback: CallbackQuery, bot: Bot):
 
 
 @router.message(Command("mytickets"))
+@router.message(F.text == "🎟 כרטיסים שפרסמתי")
 @router.message(F.text == "🎟 הכרטיסים שלי")
 async def my_tickets(message: Message):
     if await is_blocked(message.from_user.id):

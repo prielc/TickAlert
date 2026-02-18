@@ -11,14 +11,11 @@ router = Router()
 
 def get_main_keyboard(user_id: int) -> ReplyKeyboardMarkup:
     keyboard = [
-        [KeyboardButton(text="🎫 אירועים זמינים"), KeyboardButton(text="📋 האירועים שלי")],
-        [KeyboardButton(text="💰 פרסום כרטיס"), KeyboardButton(text="🎟 הכרטיסים שלי")],
-        [KeyboardButton(text="❓ עזרה")],
+        [KeyboardButton(text="🔎 מחפש כרטיס"), KeyboardButton(text="💰 מוכר כרטיס")],
+        [KeyboardButton(text="📋 אירועים שנרשמתי להתראות"), KeyboardButton(text="🎟 כרטיסים שפרסמתי")],
+        [KeyboardButton(text="🔧 תפריט מנהל"), KeyboardButton(text="❓ עזרה"), KeyboardButton(text="❌ ביטול")] if user_id in ADMIN_IDS
+        else [KeyboardButton(text="❓ עזרה"), KeyboardButton(text="❌ ביטול")],
     ]
-    if user_id in ADMIN_IDS:
-        keyboard.append([KeyboardButton(text="❌ ביטול"), KeyboardButton(text="🔧 תפריט מנהל")])
-    else:
-        keyboard.append([KeyboardButton(text="❌ ביטול")])
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -46,14 +43,12 @@ async def start(message: Message):
         "הירשמו לאירוע — וקבלו התראה מיידית כשכרטיס מתפנה!\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "⚽ <b>מה אפשר לעשות כאן?</b>\n\n"
-        "🎫 <b>אירועים זמינים</b> — צפו במשחקים הקרובים והירשמו להתראות\n"
-        "📋 <b>האירועים שלי</b> — המשחקים שנרשמתם אליהם\n"
-        "💰 <b>פרסום כרטיס</b> — יש כרטיס מיותר? פרסמו אותו כאן\n"
-        "🎟 <b>הכרטיסים שלי</b> — צפייה ומחיקה של כרטיסים שפרסמתם\n"
-        "🔎 <b>צפייה בכרטיסים</b> — אירועים זמינים → בחרו אירוע → צפייה בכרטיסים זמינים\n\n"
+        "💰 <b>מוכר כרטיס</b> — פרסמו כרטיס למכירה\n"
+        "🔎 <b>מחפש כרטיס</b> — צפו באירועים והירשמו להתראות\n"
+        "📋 <b>האירועים שלי</b> — האירועים שנרשמתם אליהם\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "💡 <b>איך זה עובד?</b>\n\n"
-        "1. בחרו אירוע מתוך <b>אירועים זמינים</b>\n"
+        "1. לחצו על <b>מחפש כרטיס</b> ובחרו אירוע\n"
         "2. הירשמו לקבלת התראות\n"
         "3. כשמישהו מפרסם כרטיס — תקבלו הודעה ישירות לכאן!\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -79,15 +74,13 @@ async def help_command(message: Message):
         "הירשמו לאירוע — וקבלו התראה מיידית כשכרטיס מתפנה!\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "⚽ <b>מה אפשר לעשות כאן?</b>\n\n"
-        "🎫 <b>אירועים זמינים</b> — צפו במשחקים הקרובים והירשמו להתראות\n"
-        "📋 <b>האירועים שלי</b> — המשחקים שנרשמתם אליהם\n"
-        "💰 <b>פרסום כרטיס</b> — יש כרטיס מיותר? פרסמו אותו כאן\n"
-        "🎟 <b>הכרטיסים שלי</b> — צפייה ומחיקה של כרטיסים שפרסמתם\n"
-        "🔎 <b>צפייה בכרטיסים</b> — אירועים זמינים → בחרו אירוע → צפייה בכרטיסים זמינים\n"
-        "❌ <b>ביטול</b> — ביטול פעולה נוכחית\n\n"
+        "💰 <b>מוכר כרטיס</b> — פרסמו כרטיס למכירה\n"
+        "🔎 <b>מחפש כרטיס</b> — צפו באירועים והירשמו להתראות\n"
+        "📋 <b>האירועים שלי</b> — האירועים שנרשמתם אליהם\n"
+        "❌ <b>ביטול וחזרה להתחלה</b> — ביטול פעולה וחזרה לתפריט הראשי\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "💡 <b>איך זה עובד?</b>\n\n"
-        "1. בחרו אירוע מתוך <b>אירועים זמינים</b>\n"
+        "1. לחצו על <b>מחפש כרטיס</b> ובחרו אירוע\n"
         "2. הירשמו לקבלת התראות\n"
         "3. כשמישהו מפרסם כרטיס — תקבלו הודעה ישירות לכאן!\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -108,6 +101,7 @@ def _event_label(event) -> str:
 
 
 @router.message(Command("events"))
+@router.message(F.text == "🔎 מחפש כרטיס")
 @router.message(F.text == "🎫 אירועים זמינים")
 async def events(message: Message):
     if await is_blocked(message.from_user.id):
@@ -222,7 +216,7 @@ async def unregister_event(callback: CallbackQuery):
 
 
 @router.message(Command("myevents"))
-@router.message(F.text == "📋 האירועים שלי")
+@router.message(F.text == "📋 אירועים שנרשמתי להתראות")
 async def my_events(message: Message):
     if await is_blocked(message.from_user.id):
         await message.answer("⛔ אתה חסום ואינך יכול להשתמש בבוט זה.")

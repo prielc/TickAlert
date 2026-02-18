@@ -249,6 +249,9 @@ async def unblock_user_id(message: Message, state: FSMContext):
 
 @router.message(Command("cancel"))
 @router.message(F.text == "❌ ביטול")
+@router.message(F.text == "❌ ביטול וחזרה להתחלה")
 async def cancel(message: Message, state: FSMContext):
+    from src.handlers.user import get_main_keyboard
     await state.clear()
-    await message.answer("❌ הפעולה בוטלה.")
+    keyboard = get_main_keyboard(message.from_user.id)
+    await message.answer("❌ הפעולה בוטלה. חזרת לתפריט הראשי.", reply_markup=keyboard)
